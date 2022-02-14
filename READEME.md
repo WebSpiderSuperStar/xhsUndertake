@@ -64,6 +64,7 @@ dev\command\xiaohongshu\note_comment\xiaohongshu_user_detail_do.php
 select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month)
 # 本月十四号
 select date_format(curdate(), '%Y-%m-14')
+select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month)
 ```
 
 
@@ -109,8 +110,8 @@ xhs_comment2.php
 ```sql
 select comment_flag, COUNT(comment_flag)
 from opinion.xiaohongshu_comment_note
-where create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and create_time < (select date_format(curdate(), '%Y-%m-14'))
+where create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 2 month))
+  and create_time < (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
 group by comment_flag;
 ```
 
@@ -132,18 +133,18 @@ set xnu.flag = 100
 where xcn.create_time >= '2021-06-14 00:00'
   and xcn.create_time <= '2021-07-13 00:00'
   and flag = 0;
-  
+
 update xiaohongshu_note_usr xnu join xiaohongshu_comment_note xcn on xnu.user_id = xcn.user_id
 set xnu.flag = 100
 where xcn.create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and xcn.create_time <= (select date_format(curdate(), '%Y-%m-14'))
+  and xcn.create_time <= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and flag = 0;
 
 
 update xiaohongshu_comment_note xcn join xiaohongshu_note_comment xnc on xcn.note_id = xnc.note_id join xiaohongshu_note_usr xnu on xnc.user_id = xnu.user_id
 set xnu.flag = 100
 where xcn.create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and xcn.create_time <= (select date_format(curdate(), '%Y-%m-14'))
+  and xcn.create_time <= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and flag = 0;
 ```
 
@@ -173,14 +174,14 @@ dev\command\xiaohongshu\note_comment\xiaohongshu_note_comment_statistic.php
 update xiaohongshu_note_usr xnu join xiaohongshu_comment_note xcn on xnu.user_id = xcn.user_id
 set xnu.flag = 100
 where xcn.create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and xcn.create_time <= (select date_format(curdate(), '%Y-%m-14'))
+  and xcn.create_time <= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and flag = 0;
 
 # 刷新当月需要更新的帖子作者信息，时间周期随报告时间变化
 update xiaohongshu_comment_note xcn join xiaohongshu_note_comment xnc on xcn.note_id = xnc.note_id join xiaohongshu_note_usr xnu on xnc.user_id = xnu.user_id
 set xnu.flag = 100
 where xcn.create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and xcn.create_time <= (select date_format(curdate(), '%Y-%m-14'))
+  and xcn.create_time <= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and flag = 0;
 
 # 刷新当月造假评论（关键词），时间周期随报告时间变化，关键词参照 小红书鉴别代购和售假规则_0527.xlsx->鉴别售假评论->评论涉及造假
@@ -188,7 +189,7 @@ update xiaohongshu_comment_note xcn join xiaohongshu_note_comment xnc on xcn.not
 set xnc.fake_flag = 1,
     xnc.notice    = '售假评论-评论涉及造假：私聊'
 where xcn.create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and xcn.create_time <= (select date_format(curdate(), '%Y-%m-14'))
+  and xcn.create_time <= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and comment_content like '%私聊%';
 
 # 刷新当月造假评论（纯数字），时间周期随报告时间变化
@@ -196,7 +197,7 @@ update xiaohongshu_comment_note xcn join xiaohongshu_note_comment xnc on xcn.not
 set xnc.fake_flag = 1,
     xnc.notice    = '售假评论-评论涉及造假：评论回复数字，无文字内容'
 where xcn.create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and xcn.create_time <= (select date_format(curdate(), '%Y-%m-14'))
+  and xcn.create_time <= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and comment_content REGEXP '(^[0-9]+$)';
 ```
 
@@ -207,14 +208,14 @@ where xcn.create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), IN
 SELECT *
 FROM xiaohongshu_comment_note
 where create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and create_time < (select date_format(curdate(), '%Y-%m-14'))
+  and create_time < (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and fake_flag = 1;
 
 # 代购帖子集合，时间周期随报告时间变化
 SELECT *
 FROM xiaohongshu_comment_note
 where create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and create_time < (select date_format(curdate(), '%Y-%m-14'))
+  and create_time < (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and fake_flag = 1
   and daigoubuyer_flag > 0
 group by user_id;
@@ -224,14 +225,14 @@ select *
 from xiaohongshu_comment_note
 where keyword = '收藏抓取'
   and create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and create_time < (select date_format(curdate(), '%Y-%m-14'))
+  and create_time < (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
 
 # 疑似售假评论集合，时间周期随报告时间变化
 select xnc.*
 from xiaohongshu_comment_note xcn
          join xiaohongshu_note_comment xnc on xcn.note_id = xnc.note_id
 where create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
-  and create_time < (select date_format(curdate(), '%Y-%m-14'))
+  and create_time < (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and xnc.fake_flag = 1;
 ```
 
