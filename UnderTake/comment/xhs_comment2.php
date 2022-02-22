@@ -134,14 +134,8 @@ function getNoteCotent($noteid, $endid, $Authorization)
 }
 
 var_dump(date("Y-m-d H:i:s"));
-if ($argv[1]) {
-    $flag = $argv[1];
-} else {
-    $flag = 2;
-}
+$flag =  $argv[1] ?? 2;
 $notecount = 0;
-$sql = "set names utf8mb4;";
-$res = $db->query($sql);
 $result = Get_LVnoteid($db, $flag);
 while ($result) {
     foreach ($result as $value) {

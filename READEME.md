@@ -118,38 +118,26 @@ group by comment_flag;
 4. 帖子用户、评论用户导入到用户表
 
 ```sql
-insert
-ignore into opinion.xiaohongshu_note_usr(user_id, user_name)
-select user_id, comment_nick
-from opinion.xiaohongshu_note_comment;
+insert ignore into opinion.xiaohongshu_note_usr(user_id, user_name)
+select user_id, comment_nick from opinion.xiaohongshu_note_comment;
 
-insert
-ignore into opinion.xiaohongshu_note_usr(user_id, user_name)
+insert ignore into opinion.xiaohongshu_note_usr(user_id, user_name)
 select user_id, user_name
 from opinion.xiaohongshu_comment_note;
 
 update opinion.xiaohongshu_note_usr xnu join opinion.xiaohongshu_comment_note xcn
 on xnu.user_id = xcn.user_id
     set xnu.flag = 100
-where xcn.create_time >= (select DATE_SUB(date_format(curdate()
-    , '%Y-%m-14')
-    , INTERVAL 1 month))
-  and xcn.create_time
-    < (select DATE_SUB(date_format(curdate()
-    , '%Y-%m-14')
-    , INTERVAL 0 month))
+where xcn.create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
+  and xcn.create_time < (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and flag = 0;
 
-update opinion.xiaohongshu_note_usr xnu join opinion.xiaohongshu_comment_note xcn
+update opinion.xiaohongshu_note_usr xnu
+    join opinion.xiaohongshu_comment_note xcn
 on xnu.user_id = xcn.user_id
     set xnu.flag = 100
-where xcn.create_time >= (select DATE_SUB(date_format(curdate()
-    , '%Y-%m-14')
-    , INTERVAL 1 month))
-  and xcn.create_time
-    < (select DATE_SUB(date_format(curdate()
-    , '%Y-%m-14')
-    , INTERVAL 0 month))
+where xcn.create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
+  and xcn.create_time< (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and flag = 0;
 
 
@@ -158,13 +146,8 @@ update opinion.xiaohongshu_comment_note xcn
 on xcn.note_id = xnc.note_id
     join opinion.xiaohongshu_note_usr xnu on xnc.user_id = xnu.user_id
     set xnu.flag = 100
-where xcn.create_time >= (select DATE_SUB(date_format(curdate()
-    , '%Y-%m-14')
-    , INTERVAL 1 month))
-  and xcn.create_time
-    < (select DATE_SUB(date_format(curdate()
-    , '%Y-%m-14')
-    , INTERVAL 0 month))
+where xcn.create_time >= (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 1 month))
+  and xcn.create_time < (select DATE_SUB(date_format(curdate(), '%Y-%m-14'), INTERVAL 0 month))
   and flag = 0;
 ```
 
