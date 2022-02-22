@@ -199,40 +199,25 @@ echo 'flag:' . $flag . PHP_EOL;
 $notecount = 0;
 $result = Get_noteid($db, $flag);
 while ($result) {
-    sleep(mt_rand(3, 5));
     foreach ($result as $value) {
+        sleep(mt_rand(3, 5));
         $temp = 1;
         $count = 0;
         $notecount++;
         $authorizationid = 0;
-        //获取Authorization
-//        $Authorization_value = Get_Authorization($db, $authorizationid);
-//        $Authorization = $Authorization_value['authorization'];
-//        $Authorizationid = $Authorization_value['id'];
-//        $Authorizationid = 2;
         $Authorizationid_arr = [
-            'wxmp.cae1b1cf-cd6d-4072-a540-5a4c32aad184',
-            'wxmp.ecfa3b20-9ecf-411f-8cc0-6ed4e560b06e',
-            'wxmp.c707b15c-5c72-451c-8a33-0f226dd503f7',
-            'wxmp.03e2fd17-c98e-4fbc-bfa9-1f028f96d642',
-            'wxmp.a9ccfc91-69bf-4cf0-a14b-74cdfd87b503',
+            'wxmp.25a1d7d4-5ced-4b1a-b037-a99be272c99c',
             'wxmp.8857a74d-14dc-4ed6-b157-3c8fb7df16de',
-            'wxmp.a28c644d-fca1-4f8c-a01a-60d6da837f54',
-            'wxmp.719f1c87-5ac9-424e-b4c6-1b6511a47d7d',
-            'wxmp.c501e4f2-82cd-4d28-a977-e7e940d2a891',
         ];
         $Authorizationids = $Authorizationid_arr[mt_rand(0, count($Authorizationid_arr) - 1)];
         echo "Authorizationids:$Authorizationids" . PHP_EOL;
         var_dump($notecount);
-//        var_dump($authorizationid);
-//        var_dump($Authorization);
         $noteid = $value['note_id'];
         $url = "https://www.xiaohongshu.com/fe_api/burdock/qq/v2/notes/{$noteid}/comments?pageSize=10";
         $endid = '';
         $x_sign = Get_xsign($noteid, $endid);
         $header = array(
             "authority: www.xiaohongshu.com",
-//            "authorization: wxmp.8857a74d-14dc-4ed6-b157-3c8fb7df16de",
             "authorization: {$Authorizationids}",
             "pragma: no-cache",
             "cache-control: no-cache",

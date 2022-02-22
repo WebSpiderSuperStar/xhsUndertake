@@ -15,18 +15,6 @@ try {
     sleep(10);
 }
 
-
-function uuid()
-{
-    $chars = md5(uniqid(mt_rand(), true));
-    return substr($chars, 0, 8) . '-'
-        . substr($chars, 8, 4) . '-'
-        . substr($chars, 12, 4) . '-'
-        . substr($chars, 16, 4) . '-'
-        . substr($chars, 20, 12);
-
-}
-
 function Get_xsign($noteid, $endid)
 {
     $dir = __DIR__;
@@ -39,39 +27,18 @@ function Get_xsign($noteid, $endid)
     return $x_sign;
 }
 
-function Get_Authorization($db, $authorizationid)
-{
-    $sql = "select id,authorization from xhs_wx_authorization where owner = 'yx' and id = 2;";
-    $sth = $db->query($sql);
-    $result = $sth->fetchAll(PDO::FETCH_ASSOC);
-    $Authorization_array = array();
-    foreach ($result as $value) {
-        $Authorization_array[] = $value;
-    }
-    return $Authorization_array[$authorizationid];
-}
-
-function Get_noteid($db, $flag)
-{
-    $sql = "select note_id FROM industry.xiaohongshu_comment_note_2 where comment_flag in (0, {$flag}) order by comment_flag desc limit 1000;";
-    $sth = $db->query($sql);
-    $result = $sth->fetchAll(PDO::FETCH_ASSOC);
-    $update_arr = array();
-    foreach ($result as $value) {
-        $noteid = $value['note_id'];
-        $update_arr[] = "'" . $noteid . "'";
-    }
-    if (!empty($update_arr)) {
-        $update_str = implode(',', $update_arr);
-        $sql = "update xiaohongshu_comment_note_2 set comment_flag = {$flag} where note_id in ({$update_str});";
-        $sth = $db->query($sql);
-    }
-    return $result;
-}
-
+/**
+ * 获取lv id
+ * @param $db
+ * @param $flag
+ * @return mixed
+ */
 function Get_LVnoteid($db, $flag)
 {
-    $sql = "SELECT note_id FROM xiaohongshu_comment_note where create_time >= '2021-12-14 00:00' and create_time < '2022-01-14 00:00' and comment_flag in (0, {$flag}) order by comment_flag desc limit 1000;";
+    $start_date = date('Y-m-14', strtotime("-1 month"));
+    $last_date = date('Y-m-14');
+    $time_limit = "create_time >= '{$start_date}' AND create_time < '{$last_date}'";
+    $sql = "SELECT note_id FROM xiaohongshu_comment_note where {$time_limit} and comment_flag in (0, {$flag}) order by comment_flag desc limit 1000;";
     $sth = $db->query($sql);
     $result = $sth->fetchAll(PDO::FETCH_ASSOC);
     $update_arr = array();
@@ -87,13 +54,19 @@ function Get_LVnoteid($db, $flag)
     return $result;
 }
 
-
+/**
+ * 更新状态
+ * @param $db
+ * @param $noteid
+ * @param $flag
+ */
 function updateNoteFlag($db, $noteid, $flag)
 {
     $sql = "update xiaohongshu_comment_note set comment_flag = {$flag} where note_id = '{$noteid}';";
     var_dump($sql);
     $sth = $db->query($sql);
 }
+
 
 function updateAuthorizationFlag($db, $Authorizationid, $flag)
 {
@@ -124,20 +97,15 @@ function curl_get($url, $header)
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-    // curl_setopt($ch, CURLOPT_HEADER, 1);
-    // curl_setopt($ch, CURLOPT_, 1);
-    // curl_setopt($ch, CURLOPT_POST, 1);
-    // curl_setopt($ch, CURLOPT_POSTFIELDS, 'version=3.4.1&spuId=kingPower_mall@367');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_TIMEOUT, 5);
     curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla%2F5.0+%28Linux%3B+Android+10%3B+ONEPLUS+A6000+Build%2FQKQ1.190716.003%3B+wv%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Version%2F4.0+Chrome%2F87.0.4280.101+Mobile+Safari%2F537.36 QQ/8.5.0.5025 V1_AND_SQ_8.5.0_1596_YYB_D QQ/MiniApp');
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
     curl_setopt($ch, CURLOPT_COOKIE, '');
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-    $detail = curl_exec($ch);
-    return $detail;
-    // $detail = mb_convert_encoding("$detail", "UTF-8", "GBK");
+    // ignore SSL verify
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    return curl_exec($ch);
 }
 
 function getNoteCotent($noteid, $endid, $Authorization)
@@ -146,7 +114,7 @@ function getNoteCotent($noteid, $endid, $Authorization)
     $x_sign = Get_xsign($noteid, $endid);
     $header = array(
         "authority: www.xiaohongshu.com",
-        "Authorization: wxmp.c694df92-178c-4196-a498-0a8bd616c4e8",
+        "Authorization: ${Authorization}",
         "pragma: no-cache",
         "cache-control: no-cache",
         "accept: application/json, text/plain, */*",
@@ -161,19 +129,15 @@ function getNoteCotent($noteid, $endid, $Authorization)
         "referer: https://appservice.qq.com/1108221428/2.18.1/page-frame.html"
     );
     $content = curl_get($url, $header);
-    if (!empty($content)) {
-        $data_json = json_decode($content, true);
-        return $data_json;
-    } else {
-        return false;
-    }
+    $data_json = !empty($content) ? json_decode($content, true, 512, JSON_THROW_ON_ERROR) : false;
+    return $data_json;
 }
 
-var_dump("start time:", date("Y-m-d H:i:s"));
+var_dump(date("Y-m-d H:i:s"));
 if ($argv[1]) {
     $flag = $argv[1];
 } else {
-    $flag = 0;
+    $flag = 2;
 }
 $notecount = 0;
 $sql = "set names utf8mb4;";
@@ -181,38 +145,23 @@ $res = $db->query($sql);
 $result = Get_LVnoteid($db, $flag);
 while ($result) {
     foreach ($result as $value) {
-        $noteid = $value['note_id'];
         $temp = 1;
         $count = 0;
         $notecount++;
-//        $authorizationid = 0;
-//        $Authorization_value = Get_Authorization($db, $authorizationid);
-//        $Authorization = $Authorization_value['authorization'];
-//        $Authorizationid = $Authorization_value['id'];
-//        var_dump($notecount);
-//        var_dump($authorizationid);
-//        var_dump($Authorization);
         $Authorizationid_arr = [
-            'wxmp.cae1b1cf-cd6d-4072-a540-5a4c32aad184',
-            'wxmp.ecfa3b20-9ecf-411f-8cc0-6ed4e560b06e',
-            'wxmp.c707b15c-5c72-451c-8a33-0f226dd503f7',
-            'wxmp.03e2fd17-c98e-4fbc-bfa9-1f028f96d642',
-            'wxmp.a9ccfc91-69bf-4cf0-a14b-74cdfd87b503',
+            'wxmp.25a1d7d4-5ced-4b1a-b037-a99be272c99c',
             'wxmp.8857a74d-14dc-4ed6-b157-3c8fb7df16de',
-//        'wxmp.2fbb5b6b-230e-4022-a939-10446069571c',
-            'wxmp.a28c644d-fca1-4f8c-a01a-60d6da837f54',
-            'wxmp.719f1c87-5ac9-424e-b4c6-1b6511a47d7d',
-            'wxmp.c501e4f2-82cd-4d28-a977-e7e940d2a891',
+            'wxmp.03e2fd17-c98e-4fbc-bfa9-1f028f96d642',
+            'wxmp.a009620c-7b90-4674-8418-19ef76334816',
+            'wxmp.df473d8f-dbb0-43dc-8688-4b0eefc201eb',
         ];
         $Authorizationid = $Authorizationid_arr[mt_rand(0, count($Authorizationid_arr) - 1)];
-
+        $noteid = $value['note_id'];
         $url = "https://www.xiaohongshu.com/fe_api/burdock/qq/v2/notes/{$noteid}/comments?pageSize=10";
         $endid = '';
         $x_sign = Get_xsign($noteid, $endid);
         $header = array(
             "authority: www.xiaohongshu.com",
-//            "Authorization: wxmp.c694df92-178c-4196-a498-0a8bd616c4e8",
-//            "Authorization: wxmp.8857a74d-14dc-4ed6-b157-3c8fb7df16de",
             "Authorization: {$Authorizationid}",
             "pragma: no-cache",
             "cache-control: no-cache",
@@ -227,13 +176,18 @@ while ($result) {
             "Host: www.xiaohongshu.com",
             "referer: https://appservice.qq.com/1108221428/2.18.1/page-frame.html"
         );
+        var_dump($header[1]);
         $content = curl_get($url, $header);
-//        sleep(1);
-        mt_rand(1, 3);
-        $data_json = json_decode($content, true);
+        try {
+            $data_json = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            echo "parse json while error:";
+            var_dump($e);
+        }
         $total_count = $data_json['data']['commentsLevel1Count'];
         $success_flag = $data_json['success'];
         $msg = $data_json['msg'];
+        sleep(mt_rand(3, 5));
         if ($total_count === 0) {
             updateNoteFlag($db, $noteid, 1);
         } elseif ($success_flag == false) {
@@ -272,14 +226,14 @@ while ($result) {
                 if ($temp == $count) {
                     var_dump($content);
                     checkAuthorizationFlag($db, $Authorizationid);
-                    $data_json = getNoteCotent($noteid, $endid, $Authorization);
+                    $data_json = getNoteCotent($noteid, $endid, $Authorizationid);
                     if (empty($content)) {
                         continue 2;
                     }
                 } else {
                     $temp = $count;
                 }
-                sleep(mt_rand(1, 3));
+
                 $comment_insert_arr = array();
                 $comment_arr = $data_json['data']['comments'];
                 $success_flag = $data_json['success'];
